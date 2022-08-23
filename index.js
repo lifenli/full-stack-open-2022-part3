@@ -1,5 +1,7 @@
 const express = require('express')
 const app = express()
+var morgan = require('morgan')
+
 
 const persons =
     [
@@ -26,10 +28,15 @@ const persons =
     ]
 
 const amount = persons.length
+morgan.token('reqInfo', function (req, res) {
+    return JSON.stringify(req.body)
+})
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :reqInfo'))
+
 
 app.get('/info', (request, response) => {
     response.send(
-        `<h2>Phonebook has info for ${amount} persons</h2>
+        `< h2 > Phonebook has info for ${amount} persons</h2 >
         <p>${Date()}</p>`
     )
 })
@@ -37,6 +44,7 @@ app.get('/info', (request, response) => {
 app.get('/api/persons', (request, response) => {
     response.json(persons)
 })
+
 app.get('/api/persons/:id', (request, response) => {
     const id = Number(request.params.id)
     const person = persons.find(person => person.id === id)
@@ -73,8 +81,8 @@ app.post('/api/persons', (request, response) => {
     persons.find(person => person.name === newPerson.name) && response.status(404).json({ error: 'This person already exists' })
     persons.concat(newPerson)
     response.json(newPerson)
-
 })
+
 
 
 app.delete('/api/persons/:id', (request, response) => {
@@ -92,5 +100,5 @@ app.delete('/api/persons/:id', (request, response) => {
 
 const PORT = 3001
 app.listen(PORT, () => {
-    console.log(`server running on port ${PORT}`);
+    console.log(`server running on port ${PORT} `);
 })
