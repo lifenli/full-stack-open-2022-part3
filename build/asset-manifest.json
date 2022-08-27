@@ -1,0 +1,10 @@
+{
+  "files": {
+    "main.js": "/static/js/main.cad32f15.js",
+    "index.html": "/index.html",
+    "main.cad32f15.js.map": "/static/js/main.cad32f15.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.cad32f15.js"
+  ]
+}
