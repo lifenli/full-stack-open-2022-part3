@@ -9,7 +9,7 @@ const password = process.argv[2]
 const personName = process.argv[3]
 const personNumber = process.argv[4]
 
-const url = `mongodb+srv://nomady:Tree32solo@cluster0.cuo81ph.mongodb.net/phonebook?retryWrites=true&w=majority`
+const url = `mongodb+srv://username:password@cluster0.cuo81ph.mongodb.net/phonebook?retryWrites=true&w=majority`
 
 const personSchema = new mongoose.Schema({
     name: String,
