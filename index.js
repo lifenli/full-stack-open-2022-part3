@@ -1,34 +1,13 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 var morgan = require('morgan')
+const Person = require('./models/person')
 app.use(express.static('build'))
+app.use(express.json())
 
 
-const persons =
-    [
-        {
-            "id": 1,
-            "name": "Arto Hellas",
-            "number": "040-123456"
-        },
-        {
-            "id": 2,
-            "name": "Ada Lovelace",
-            "number": "39-44-5323523"
-        },
-        {
-            "id": 3,
-            "name": "Dan Abramov",
-            "number": "12-43-234345"
-        },
-        {
-            "id": 4,
-            "name": "Mary Poppendieck",
-            "number": "39-23-6423122"
-        }
-    ]
-
-const amount = persons.length
+const amount = Person.length
 morgan.token('reqInfo', function (req, res) {
     return JSON.stringify(req.body)
 })
@@ -43,63 +22,64 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(persons =>
+        response.json(persons))
 })
 
 app.get('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const person = persons.find(person => person.id === id)
-    if (!person) {
-        return response.status(404).end()
-    } else {
-        response.json(person)
-    }
+    Person.findById(request.params.id).then(person =>
+        response.json(person))
 })
 
-app.use(express.json())
-app.post('/api/persons', (request, response) => {
-    function getRandomIdInclusive(min, max) {
-        min = Math.ceil(min);
-        max = Math.floor(max);
-        return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
-    }
 
-    const createdNewId = () => {
-        const newId = persons.length > 0
-            ? getRandomIdInclusive(1, 100)
-            : 0
-        return newId + 1
-    }
+app.post('/api/persons', (request, response) => {
     const body = request.body
-    const newPerson = {
-        id: createdNewId(),
+    const newPerson = new Person({
         name: body.name,
         number: body.number
-    }
+    })
 
     !newPerson.name && response.status(404).json({ error: 'Name is missing' })
     !newPerson.number && response.status(404).json({ error: 'Number is missing' })
-    persons.find(person => person.name === newPerson.name) && response.status(404).json({ error: 'This person already exists' })
-    persons.concat(newPerson)
-    response.json(newPerson)
+    // Person.find(newPerson.name) && response.status(404).json({ error: 'This person already exists' })
+    newPerson.save().then(savedPerson =>
+        response.json(savedPerson)
+    )
 })
 
-
-
-app.delete('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const person = persons.find(person => person.id === id)
-    const updatedPersons = [...persons.slice(id, 1)]
-    if (!person) {
-        return response.status(404).end()
-    } else {
-        response.json(updatedPersons)
+app.put('/api/persons/:id', (request, response, next) => {
+    const body = request.body
+    const person = {
+        name: body.name,
+        number: body.number,
     }
+
+    Person.findByIdAndUpdate(request.params.id, person, { new: true })
+        .then(updatedPerson => {
+            response.json(updatedPerson)
+        })
+        .catch(error => next(error))
 })
 
+app.delete('/api/persons/:id', (request, response, next) => {
+    // const updatedPersons = [...Person.slice(id, 1)]
+    Person.findByIdAndRemove(request.params.id)
+        .then(result => {
+            response.status(204).end()
+        })
+        .catch(error => next(error))
+})
 
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+    if (error.name === 'CastError') {
+        return response.status(404).send({ error: 'Malformatted id'.})
+    }
+    next(error)
+}
+app.use(errorHandler) // Needs to be at the end
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`server running on port ${PORT} `);
 })
